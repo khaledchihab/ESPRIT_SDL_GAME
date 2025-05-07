@@ -7,18 +7,14 @@
 #include <SDL/SDL_mixer.h>
 #include <SDL/SDL_ttf.h>
 
-#include "headers/menu.h"
-#include "headers/player.h"
-#include "headers/enigme.h"
-#include "headers/enemy.h"
-#include "headers/mini_map.h"
-
-// Enum for managing game states
-typedef enum {
-    STATE_MAIN_GAME,
-    STATE_ENIGME1,
-    STATE_ENIGME2
-} GameState;
+// Include correct header files
+#include "menu.h"
+#include "joueur.h"
+#include "enigme1.h"
+#include "enigme2.h"
+#include "ennemie.h"
+#include "minimap.h"
+#include "background.h"
 
 int main(int argc, char *argv[]) {
     SDL_Surface *screen = NULL;
@@ -65,24 +61,41 @@ int main(int argc, char *argv[]) {
     Mix_PlayMusic(music, -1); // Play in loop
 
     background = IMG_Load("assets/background1.png");
+    if (!background) {
+        printf("Erreur de chargement du background: %s\n", IMG_GetError());
+        return 1;
+    }
 
     // Init game elements
-    Player player;
-    initPlayer(&player);
+    // Player initialization
+    Joueur joueur;
+    initialiser_joueur(&joueur, "Player1", "assets/player_sprite.png");
 
+    // Enemy initialization
     Enemy enemy;
-    initEnemy(&enemy);
+    initEnemy(&enemy, LEVEL1, 800, 400);
 
-    MiniMap miniMap;
-    initMiniMap(&miniMap);
+    // Minimap initialization
+    minimap mini;
+    initmap(&mini);
 
-    Enigme enigme;
-    initEnigme(&enigme, "assets/enigme.txt", "assets/backgroundenig.png", font);
+    // Enigme initialization
+    enigme en;
+    SDL_Color textColor = {255, 255, 255};
+    init_enigme(&en, textColor);
 
     // Variables
     SDL_Event event;
     int continuer = 1;
-    int current_menu = MAIN_MENU;
+    MenuState current_menu = MAIN_MENU;
+    
+    // Game states
+    typedef enum {
+        STATE_MAIN_GAME,
+        STATE_ENIGME1,
+        STATE_ENIGME2
+    } GameState;
+    
     GameState gameState = STATE_MAIN_GAME;
 
     // Triggers
@@ -98,7 +111,7 @@ int main(int argc, char *argv[]) {
                 switch (event.key.keysym.sym) {
                     case SDLK_j: current_menu = PLAY_MENU; break;
                     case SDLK_o: current_menu = OPTIONS_MENU; break;
-                    case SDLK_m: current_menu = SCORE_MENU; break;
+                    case SDLK_m: current_menu = HIGHSCORE_MENU; break;
                     case SDLK_ESCAPE: continuer = 0; break;
                     case SDLK_e:
                         if (gameState == STATE_MAIN_GAME) {
@@ -133,40 +146,60 @@ int main(int argc, char *argv[]) {
         // State machine
         if (gameState == STATE_ENIGME1) {
             // Launch enigme1 code
+            quiz1(&en, screen);
             gameState = STATE_MAIN_GAME;
         } else if (gameState == STATE_ENIGME2) {
-            int result = play_enigme2(screen);
+            // Call enigme2 function
+            // Assuming enigme2.h has a function for this
             gameState = STATE_MAIN_GAME;
         } else {
             switch (current_menu) {
                 case MAIN_MENU:
-                    drawMenu(screen, font);
+                    render_main_menu(screen);
                     break;
                 case PLAY_MENU: {
                     const Uint8 *keystate = SDL_GetKeyState(NULL);
-                    updatePlayer(&player, keystate);
-                    updateEnemy(&enemy, player.position.x);
-                    updateMiniMap(&miniMap, player.position);
-
+                    
+                    // Update player based on keyboard input
+                    if (keystate[SDLK_RIGHT]) {
+                        deplacer_joueur(&joueur, 5, 0, NULL); // Assuming NULL for collision mask
+                    }
+                    if (keystate[SDLK_LEFT]) {
+                        deplacer_joueur(&joueur, -5, 0, NULL);
+                    }
+                    if (keystate[SDLK_SPACE]) {
+                        sauter_joueur(&joueur);
+                    }
+                    
+                    // Update enemy
+                    moveEnemy(&enemy, NULL); // Assuming NULL for collision mask
+                    
+                    // Update minimap
+                    MAJMinimap(joueur.position, &mini, joueur.camera, 5); // Assuming redimensionnement=5
+                    
+                    // Render game elements
                     SDL_BlitSurface(background, NULL, screen, &bgPos);
-                    drawPlayer(screen, &player);
-                    drawEnemy(screen, &enemy);
-                    drawMiniMap(screen, &miniMap);
-                    drawHealthBar(screen, player.health, font);
-
+                    afficher_joueur(joueur, screen);
+                    displayEnemy(screen, &enemy);
+                    afficherminimap(mini, screen);
+                    
+                    // Display player stats
+                    display_stats(joueur, screen, font);
+                    
                     // Enigme triggers
-                    if (abs(player.position.x - enigme1_trigger_x) < trigger_range) {
+                    if (abs(joueur.position.x - enigme1_trigger_x) < trigger_range) {
                         gameState = STATE_ENIGME1;
                     }
-                    if (abs(player.position.x - enigme2_trigger_x) < trigger_range) {
+                    if (abs(joueur.position.x - enigme2_trigger_x) < trigger_range) {
                         gameState = STATE_ENIGME2;
                     }
-
-                    if (checkCollision(player.position, enemy.position)) {
-                        player.health -= 5;
+                    
+                    // Check collision between player and enemy
+                    if (checkCollisionWithPlayer(&enemy, joueur.position)) {
+                        update_lives(&joueur, -1);
                     }
-
-                    if (player.health <= 0) {
+                    
+                    if (joueur.lives <= 0) {
                         printf("Game Over\n");
                         continuer = 0;
                     }
@@ -194,7 +227,14 @@ int main(int argc, char *argv[]) {
     TTF_CloseFont(font);
     Mix_FreeMusic(music);
     SDL_FreeSurface(background);
-    cleanUpEnigme(&enigme);
+    
+    // Free game elements
+    liberer_joueur(&joueur);
+    freeEnemy(&enemy);
+    free_minimap(&mini);
+    free_surface_enigme(&en);
+    
+    // Quit SDL subsystems
     SDL_Quit();
     TTF_Quit();
     Mix_CloseAudio();
