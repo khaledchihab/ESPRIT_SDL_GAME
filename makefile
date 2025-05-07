@@ -6,11 +6,11 @@ CFLAGS = -Wall -Wextra -O2
 LDFLAGS = -lSDL -lSDL_image -lSDL_ttf -lSDL_mixer
 
 # Source and object files
-SRCS = main.c menu.c
+SRCS = main.c menu.c background.c enigme1.c enigme2.c ennemie.c joueur.c minimap.c
 OBJS = $(SRCS:.c=.o)
 
 # Executable name
-TARGET = menu
+TARGET = SDL_Game
 
 # Default target
 all: $(TARGET)
