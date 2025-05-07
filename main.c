@@ -10,6 +10,14 @@
 #include "menu.h"
 #include "minimap.h"
 #include "enigme.h"
+#include "enigme2.h"
+
+// Add an enum for game states
+typedef enum {
+    STATE_MAIN_GAME,
+    STATE_ENIGME1,
+    STATE_ENIGME2
+} GameState;
 
 int main(int argc, char *argv[]) {
     // Initialize SDL
@@ -90,11 +98,25 @@ int main(int argc, char *argv[]) {
     int longueur = 1254;
 
     current_menu = MAIN_MENU;
+    GameState gameState = STATE_MAIN_GAME;
+    
+    // Variables for triggering enigmes
+    int enigme1_trigger_x = 500; // Example position to trigger enigme1
+    int enigme2_trigger_x = 1000; // Example position to trigger enigme2
+    int trigger_range = 50;
 
     while (!quit) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quit = 1;
+            }
+
+            // Handle key press for testing enigme2
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_e && gameState == STATE_MAIN_GAME) {
+                    // Trigger enigme2 with 'e' key for testing
+                    gameState = STATE_ENIGME2;
+                }
             }
 
             switch (current_menu) {
@@ -119,42 +141,65 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        switch (current_menu) {
-            case MAIN_MENU:
-                render_main_menu(screen);
-                break;
-            case PLAY_MENU:
-                sens = 0;
-                SDL_BlitSurface(background, NULL, screen, &position_BG);
-                MAJMinimap(p.position_perso, &m, camera, redim);
-                afficherminimap(m, screen);
-                SDL_BlitSurface(p.sprite, NULL, screen, &p.position_perso);
-                SDL_BlitSurface(pM.sprite, NULL, screen, &pM.position_perso);
+        // Handle game states
+        if (gameState == STATE_ENIGME1) {
+            // Code to run Enigme1
+            // Replace with your enigme1 code
+            gameState = STATE_MAIN_GAME; // Return to main game after enigme
+        }
+        else if (gameState == STATE_ENIGME2) {
+            // Run the enigme2 puzzle game
+            int result = play_enigme2(screen);
+            // You can do something with the result if needed (success or failure)
+            gameState = STATE_MAIN_GAME; // Return to main game after enigme
+        }
+        else {
+            switch (current_menu) {
+                case MAIN_MENU:
+                    render_main_menu(screen);
+                    break;
+                case PLAY_MENU:
+                    sens = 0;
+                    SDL_BlitSurface(background, NULL, screen, &position_BG);
+                    MAJMinimap(p.position_perso, &m, camera, redim);
+                    afficherminimap(m, screen);
+                    SDL_BlitSurface(p.sprite, NULL, screen, &p.position_perso);
+                    SDL_BlitSurface(pM.sprite, NULL, screen, &pM.position_perso);
 
-                const Uint8 *keys = SDL_GetKeyState(NULL);
-                if (keys[SDLK_RIGHT]) sens = 1;
-                if (keys[SDLK_LEFT]) sens = -1;
+                    const Uint8 *keys = SDL_GetKeyState(NULL);
+                    if (keys[SDLK_RIGHT]) sens = 1;
+                    if (keys[SDLK_LEFT]) sens = -1;
 
-                mouvement(&p, &pM, &pMprochaine, distance, longueur, longueurM, mask, sens);
+                    mouvement(&p, &pM, &pMprochaine, distance, longueur, longueurM, mask, sens);
 
-                if (sens != 0) {
-                    camera.x = pM.position_perso.x - (screen->w / 2);
-                    if (camera.x < 0) camera.x = 0;
-                    if (camera.x > longueurM - screen->w) camera.x = longueurM - screen->w;
-                }
-                break;
+                    if (sens != 0) {
+                        camera.x = pM.position_perso.x - (screen->w / 2);
+                        if (camera.x < 0) camera.x = 0;
+                        if (camera.x > longueurM - screen->w) camera.x = longueurM - screen->w;
+                    }
+                    
+                    // Check for enigme triggers based on player position
+                    if (abs(pM.position_perso.x - enigme1_trigger_x) < trigger_range) {
+                        gameState = STATE_ENIGME1;
+                    }
+                    if (abs(pM.position_perso.x - enigme2_trigger_x) < trigger_range) {
+                        gameState = STATE_ENIGME2;
+                    }
+                    
+                    break;
 
-            case OPTIONS_MENU:
-                render_options_menu(screen);
-                break;
-            case HIGHSCORE_MENU:
-                render_highscore_menu(screen);
-                break;
-            case HISTORY_MENU:
-                render_history_menu(screen);
-                break;
-            default:
-                break;
+                case OPTIONS_MENU:
+                    render_options_menu(screen);
+                    break;
+                case HIGHSCORE_MENU:
+                    render_highscore_menu(screen);
+                    break;
+                case HISTORY_MENU:
+                    render_history_menu(screen);
+                    break;
+                default:
+                    break;
+            }
         }
 
         SDL_Flip(screen);
