@@ -1,74 +1,129 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_mixer.h>
-#include <SDL/SDL_ttf.h>
+#include "headers/menu.h"
+#include "headers/player.h"
+#include "headers/enigme.h"
+#include "headers/enemy.h"
+#include "headers/mini_map.h"
 
-#include "menu.h"
-#include "minimap.h"
-#include "enigme.h"
-#include "background.h"
-#include "joueur.h" // Add joueur header
+int main(int argc, char *argv[]) {
+    SDL_Surface *screen = NULL;
+    TTF_Font *font = NULL;
+    Mix_Music *music = NULL;
 
-int main()
-{
-    SDL_Surface *ecran = NULL;
-    SDL_Surface *texte = NULL;
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+        printf("Erreur d'initialisation de SDL: %s\n", SDL_GetError());
+        return 1;
+    }
 
-    SDL_Event event;
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("Erreur d'initialisation de SDL_mixer: %s\n", Mix_GetError());
+        return 1;
+    }
+
+    if (TTF_Init() == -1) {
+        printf("Erreur d'initialisation de SDL_ttf: %s\n", TTF_GetError());
+        return 1;
+    }
+
+    screen = SDL_SetVideoMode(1280, 720, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
+    if (screen == NULL) {
+        printf("Erreur lors de la création de la fenêtre: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    SDL_WM_SetCaption("Mon Jeu", NULL);
+
+    font = TTF_OpenFont("assets/font.ttf", 24);
+    if (font == NULL) {
+        printf("Erreur lors du chargement de la police: %s\n", TTF_GetError());
+        return 1;
+    }
+
+    music = Mix_LoadMUS("assets/drumloop.wav");
+    if (music == NULL) {
+        printf("Erreur lors du chargement de la musique: %s\n", Mix_GetError());
+        return 1;
+    }
+    Mix_PlayMusic(music, -1); // Joue la musique en boucle
+
+    int menu = MAIN_MENU;
     int continuer = 1;
-    int state = 0;
+    SDL_Event event;
 
-    int choixMenu = 0;
+    Player player;
+    initPlayer(&player);
 
-    // SDL initialization
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    TTF_Init();
-    ecran = SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
-    SDL_WM_SetCaption("Mon jeu SDL", NULL);
+    Enemy enemy;
+    initEnemy(&enemy);
 
-    // Fonts
-    TTF_Font *police = TTF_OpenFont("assets/police.ttf", 30);
-    SDL_Color couleurBlanche = {255, 255, 255};
+    MiniMap miniMap;
+    initMiniMap(&miniMap);
 
-    // Musique
-    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
-    Mix_Music *musique = Mix_LoadMUS("assets/drumbeat.wav");
-    Mix_PlayMusic(musique, -1);
+    Enigme enigme;
+    initEnigme(&enigme, "assets/enigme.txt", "assets/backgroundenig.png", font);
 
-    // Menu loop
-    choixMenu = afficherMenu(ecran);
+    SDL_Surface *background = IMG_Load("assets/background1.png");
+    SDL_Rect bgPos = {0, 0};
 
-    if (choixMenu == 1) // Jouer
-    {
-        // Gameplay logic or transition to submenu
-    }
-    else if (choixMenu == 2) // Options
-    {
-        // Options screen
-    }
-    else if (choixMenu == 3) // Scores
-    {
-        // High scores
-    }
-    else if (choixMenu == 4) // Histoire
-    {
-        // Story mode or cutscene
-    }
-    else if (choixMenu == 5) // Quitter
-    {
-        continuer = 0;
+    while (continuer) {
+        SDL_PollEvent(&event);
+        switch (event.type) {
+            case SDL_QUIT:
+                continuer = 0;
+                break;
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                    case SDLK_j:
+                        menu = PLAY_MENU;
+                        break;
+                    case SDLK_o:
+                        menu = OPTIONS_MENU;
+                        break;
+                    case SDLK_m:
+                        menu = SCORE_MENU;
+                        break;
+                    case SDLK_ESCAPE:
+                        continuer = 0;
+                        break;
+                }
+                break;
+        }
+
+        if (menu == MAIN_MENU) {
+            drawMenu(screen, font);
+        } else if (menu == PLAY_MENU) {
+            const Uint8 *keystate = SDL_GetKeyState(NULL);
+            updatePlayer(&player, keystate);
+            updateEnemy(&enemy, player.position.x);
+            updateMiniMap(&miniMap, player.position);
+
+            SDL_BlitSurface(background, NULL, screen, &bgPos);
+            drawPlayer(screen, &player);
+            drawEnemy(screen, &enemy);
+            drawMiniMap(screen, &miniMap);
+            drawHealthBar(screen, player.health, font);
+
+            if (checkCollision(player.position, enemy.position)) {
+                player.health -= 5;
+            }
+
+            if (player.health <= 0) {
+                printf("Game Over\n");
+                continuer = 0;
+            }
+        }
+
+        SDL_Flip(screen);
+        SDL_Delay(16); // ~60 FPS
     }
 
     // Clean up
-    TTF_CloseFont(police);
-    TTF_Quit();
-    Mix_FreeMusic(musique);
-    Mix_CloseAudio();
+    TTF_CloseFont(font);
+    Mix_FreeMusic(music);
+    SDL_FreeSurface(background);
+    cleanUpEnigme(&enigme);
     SDL_Quit();
+    TTF_Quit();
+    Mix_CloseAudio();
 
     return 0;
 }
