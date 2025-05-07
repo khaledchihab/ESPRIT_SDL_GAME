@@ -10,6 +10,7 @@
 #include "menu.h"
 #include "minimap.h"
 #include "enigme.h"
+#include "background.h"
 
 int main(int argc, char *argv[]) {
     // Initialize SDL
@@ -39,12 +40,21 @@ int main(int argc, char *argv[]) {
     enigme en;
     init_enigme(&en, white);
 
+    // Initialize Background
+    Background bg;
+    initBackground(&bg, "map1.png", 1); // 1 for mobile background
+    
+    // Initialize game time
+    GameTime gameTime;
+    initGameTime(&gameTime, "times.ttf", 24); // Assuming you have this font in your project directory
+
     // Load assets
-    SDL_Surface *background = IMG_Load("map1.png");
     SDL_Surface *mask = IMG_Load("map1_masked.png");
-    if (!background || !mask) {
+    if (!bg.img || !mask) {
         fprintf(stderr, "Error loading background or mask image.\n");
         free_surface_enigme(&en);
+        freeBackground(&bg);
+        freeGameTime(&gameTime);
         TTF_Quit();
         SDL_Quit();
         return 1;
@@ -55,9 +65,10 @@ int main(int argc, char *argv[]) {
     pM.sprite = IMG_Load("perso2.png");
     if (!p.sprite || !pM.sprite) {
         fprintf(stderr, "Error loading sprite images.\n");
-        SDL_FreeSurface(background);
         SDL_FreeSurface(mask);
         free_surface_enigme(&en);
+        freeBackground(&bg);
+        freeGameTime(&gameTime);
         TTF_Quit();
         SDL_Quit();
         return 1;
@@ -88,6 +99,7 @@ int main(int argc, char *argv[]) {
     int redim = 20;
     int longueurM = 6268;
     int longueur = 1254;
+    int scroll_speed = 5;
 
     current_menu = MAIN_MENU;
 
@@ -104,6 +116,26 @@ int main(int argc, char *argv[]) {
                     break;
                 case PLAY_MENU:
                     current_menu = handle_play_menu_events(&event);
+                    
+                    // Add background scrolling with keyboard controls
+                    if (event.type == SDL_KEYDOWN) {
+                        switch (event.key.keysym.sym) {
+                            case SDLK_UP:
+                                scrollBackground(&bg, 0, scroll_speed);
+                                break;
+                            case SDLK_DOWN:
+                                scrollBackground(&bg, 1, scroll_speed);
+                                break;
+                            case SDLK_LEFT:
+                                scrollBackground(&bg, 2, scroll_speed);
+                                break;
+                            case SDLK_RIGHT:
+                                scrollBackground(&bg, 3, scroll_speed);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                     break;
                 case OPTIONS_MENU:
                     current_menu = handle_options_menu_events(&event);
@@ -125,11 +157,17 @@ int main(int argc, char *argv[]) {
                 break;
             case PLAY_MENU:
                 sens = 0;
-                SDL_BlitSurface(background, NULL, screen, &position_BG);
+                
+                // Display the background using our new module
+                displayBackground(bg, screen);
+                
                 MAJMinimap(p.position_perso, &m, camera, redim);
                 afficherminimap(m, screen);
                 SDL_BlitSurface(p.sprite, NULL, screen, &p.position_perso);
                 SDL_BlitSurface(pM.sprite, NULL, screen, &pM.position_perso);
+                
+                // Update and display game time
+                updateGameTime(&gameTime, screen);
 
                 const Uint8 *keys = SDL_GetKeyState(NULL);
                 if (keys[SDLK_RIGHT]) sens = 1;
@@ -141,6 +179,9 @@ int main(int argc, char *argv[]) {
                     camera.x = pM.position_perso.x - (screen->w / 2);
                     if (camera.x < 0) camera.x = 0;
                     if (camera.x > longueurM - screen->w) camera.x = longueurM - screen->w;
+                    
+                    // Sync background camera with movement
+                    bg.camera_pos.x = camera.x;
                 }
                 break;
 
@@ -162,12 +203,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Free resources
-    SDL_FreeSurface(background);
     SDL_FreeSurface(mask);
     SDL_FreeSurface(p.sprite);
     SDL_FreeSurface(pM.sprite);
     free_surface_enigme(&en);
     free_minimap(&m);
+    freeBackground(&bg);
+    freeGameTime(&gameTime);
 
     TTF_Quit();
     SDL_Quit();
