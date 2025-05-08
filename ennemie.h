@@ -11,7 +11,7 @@ typedef enum {
     ENEMY_UP,
     ENEMY_DOWN,
     ENEMY_IDLE
-} Direction;
+} EnemyDirection;
 
 // Enemy state enumeration
 typedef enum {
@@ -28,11 +28,10 @@ typedef enum {
 
 // Enemy structure
 typedef struct {
-    SDL_Surface *sprite;          // Enemy sprite sheet
-    SDL_Rect position;            // Current position
+    SDL_Surface *sprite;          // Enemy sprite sheet    SDL_Rect position;            // Current position
     SDL_Rect animation[3][4];     // Animation frames [state][direction]
     
-    Direction direction;          // Current direction
+    EnemyDirection direction;     // Current direction
     EnemyState state;             // Current state (alive, wounded, neutralized)
     EnemyLevel level;             // Enemy level
     

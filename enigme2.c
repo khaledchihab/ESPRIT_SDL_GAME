@@ -1,6 +1,5 @@
 #include "enigme2.h"
 #include "assets.h"
-#include <SDL/SDL_rotozoom.h>
 
 #define MAX_ZOOM 1.5
 #define MIN_ZOOM 1.0
@@ -156,8 +155,7 @@ void display_enigme2(Enigme2 *e, SDL_Surface *screen) {
     SDL_Rect bar_bg = {x, y, bar_width, bar_height};
     SDL_FillRect(screen, &bar_bg, SDL_MapRGB(screen->format, 100, 100, 100));
     
-    // Draw remaining time bar
-    float percentage = (float)remaining / (e->time_limit * 1000);
+    // Draw remaining time bar    float percentage = (float)remaining / (e->time_limit * 1000);
     SDL_Rect bar = {x, y, (int)(bar_width * percentage), bar_height};
     
     // Change bar color based on remaining time
@@ -175,14 +173,27 @@ void display_enigme2(Enigme2 *e, SDL_Surface *screen) {
     if (e->solved || remaining <= 0) {
         SDL_Surface *message = e->solved ? e->success_message : e->failure_message;
         if (message && e->animation_active) {
-            // Apply zoom effect
-            SDL_Surface *zoomed = rotozoomSurface(message, 0, e->zoom_factor, 1);
-            if (zoomed) {
-                SDL_Rect pos;
-                pos.x = (screen->w - zoomed->w) / 2;
-                pos.y = (screen->h - zoomed->h) / 2;
-                SDL_BlitSurface(zoomed, NULL, screen, &pos);
-                SDL_FreeSurface(zoomed);
+            // Apply simple animation effect without using SDL_rotozoom
+            SDL_Rect src_rect = {0, 0, message->w, message->h};
+            SDL_Rect pos;
+            
+            // Calculate position to center the image on screen
+            pos.x = (screen->w - (int)(message->w * e->zoom_factor)) / 2;
+            pos.y = (screen->h - (int)(message->h * e->zoom_factor)) / 2;
+            
+            // For animation effect, we'll just vary the position and size slightly
+            if (e->zoom_factor > 1.0) {
+                // Adjust width and height based on zoom factor
+                pos.w = (int)(message->w * e->zoom_factor);
+                pos.h = (int)(message->h * e->zoom_factor);
+                
+                // Standard SDL blit - no zoom, but centered with animation
+                SDL_BlitSurface(message, NULL, screen, &pos);
+            } else {
+                // No zoom, just center the image
+                pos.x = (screen->w - message->w) / 2;
+                pos.y = (screen->h - message->h) / 2;
+                SDL_BlitSurface(message, NULL, screen, &pos);
             }
         }
     }
