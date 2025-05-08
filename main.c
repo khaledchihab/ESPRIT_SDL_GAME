@@ -33,6 +33,9 @@ SDL_Surface* load_image(const char* filename);
 void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font);
 
 int main(int argc, char *argv[]) {
+    // Suppress unused parameter warnings
+    (void)argc;
+    (void)argv;
     // Core SDL variables
     SDL_Surface *screen = NULL;
     SDL_Surface *background = NULL;
@@ -251,8 +254,7 @@ int main(int argc, char *argv[]) {
                 int collision_result = checkCollisionWithPlayer(&enemy, joueur.position);
                 if (collision_result) {
                     update_lives(&joueur, -1);
-                    
-                    // Push player away from enemy on collision
+                      // Push player away from enemy on collision
                     if (joueur.position.x < enemy.position.x) {
                         deplacer_joueur(&joueur, -30, -10, collision_mask);
                     } else {

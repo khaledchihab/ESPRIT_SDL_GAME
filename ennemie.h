@@ -28,7 +28,8 @@ typedef enum {
 
 // Enemy structure
 typedef struct {
-    SDL_Surface *sprite;          // Enemy sprite sheet    SDL_Rect position;            // Current position
+    SDL_Surface *sprite;          // Enemy sprite sheet
+    SDL_Rect position;            // Current position
     SDL_Rect animation[3][4];     // Animation frames [state][direction]
     
     EnemyDirection direction;     // Current direction
