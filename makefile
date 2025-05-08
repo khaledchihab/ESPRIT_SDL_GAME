@@ -5,6 +5,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 $(shell sdl-config --cflags)
 LDFLAGS = $(shell sdl-config --libs) -lSDL_image -lSDL_ttf -lSDL_mixer -lm
 
+# Check for SDL_image version
+SDL_IMAGE_FLAGS := $(shell pkg-config --cflags --libs SDL_image 2>/dev/null || echo "")
+
 # Source and object files
 SRCS = main.c assets.c menu.c background.c enigme1.c enigme2.c ennemie.c joueur.c minimap.c
 OBJS = $(SRCS:.c=.o)
@@ -19,9 +22,16 @@ all: $(TARGET)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Check asset formats
+check-assets:
+	@echo "Checking asset formats..."
+	@echo "This would check image, audio and font formats (implementation left as an exercise)"
+
 # Link object files to create executable
 $(TARGET): $(OBJS)
+	@echo "Linking $(TARGET)..."
 	$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS)
+	@echo "Build complete. If you encounter asset loading issues, please see ASSET_GUIDE.md"
 
 # Clean up compiled files
 clean:
