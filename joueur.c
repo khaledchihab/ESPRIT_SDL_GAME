@@ -6,6 +6,7 @@
 #include <SDL/SDL_ttf.h>
 #include <SDL/SDL_mixer.h>
 #include "joueur.h"
+#include "assets.h" // Include for SCREEN_WIDTH, SCREEN_HEIGHT, and path definitions
 
 // 1. Initialize and display player
 void initialiser_joueur(Joueur *joueur, char *name, char *spritePath) {
@@ -412,24 +413,24 @@ Joueur initialiser_joueur2(char *name, char *spritePath) {
 }
 
 // 6. Character selection submenu
-void init_character_select(CharacterSelectMenu *menu) {
-    // Load menu background
-    menu->menuBg = load_asset_image(TEXTURE_PATH "character_select_bg.png");
+void init_character_select(CharacterSelectMenu *menu) {    // Load menu background
+    char bgPath[100];
+    sprintf(bgPath, "%scharacter_select_bg.png", TEXTURE_PATH);
+    menu->menuBg = load_asset_image(bgPath);
     if (!menu->menuBg) {
         fprintf(stderr, "Could not load character select background: %s\n", IMG_GetError());
     }
       // Load character sprite options
     for (int i = 0; i < 4; i++) {
         char path[100];
-        sprintf(path, TEXTURE_PATH "character_%d.png", i+1);
+        sprintf(path, "%scharacter_%d.png", TEXTURE_PATH, i+1);
         menu->characterSprites[i] = load_asset_image(path);
         
         if (!menu->characterSprites[i]) {
             fprintf(stderr, "Could not load character sprite %d: %s\n", i+1, IMG_GetError());
-        }
-          // Load clothing options for each character
+        }        // Load clothing options for each character
         for (int j = 0; j < 3; j++) {
-            sprintf(path, TEXTURE_PATH "character_%d_clothing_%d.png", i+1, j+1);
+            sprintf(path, "%scharacter_%d_clothing_%d.png", TEXTURE_PATH, i+1, j+1);
             menu->clothingOptions[i][j] = load_asset_image(path);
             
             if (!menu->clothingOptions[i][j]) {
@@ -499,11 +500,10 @@ Joueur select_character(CharacterSelectMenu menu, int characterIndex, int clothi
     
     // Validate indices
     if (characterIndex < 0 || characterIndex > 3) characterIndex = 0;
-    if (clothingIndex < 0 || clothingIndex > 2) clothingIndex = 0;
-      // Load appropriate character sprite with clothing
+    if (clothingIndex < 0 || clothingIndex > 2) clothingIndex = 0;    // Load appropriate character sprite with clothing
     char spritePath[100];
-    sprintf(spritePath, TEXTURE_PATH "character_%d_clothing_%d_spritesheet.png", 
-            characterIndex + 1, clothingIndex + 1);
+    sprintf(spritePath, "%scharacter_%d_clothing_%d_spritesheet.png", 
+            TEXTURE_PATH, characterIndex + 1, clothingIndex + 1);
     
     // Initialize player with selected appearance
     initialiser_joueur(&selected, name, spritePath);
