@@ -155,30 +155,35 @@ void moveEnemy(Enemy *enemy, SDL_Surface *mask) {
         enemy->current_patrol_point = (enemy->current_patrol_point + 1) % 2;
     }
     
-    // Apply movement if collision check passes
-    // Get pixel at new position to check for collision with mask
-    Uint32 pixel;
-    int bpp = mask->format->BytesPerPixel;
-    
-    // Check for collision at the new position
+    // Apply movement with proper collision check
     int newX = enemy->position.x + dx;
     int newY = enemy->position.y + dy;
     
-    if (newX >= 0 && newX < mask->w && newY >= 0 && newY < mask->h) {
-        Uint8 *p = (Uint8 *)mask->pixels + newY * mask->pitch + newX * bpp;
-        pixel = *(Uint32 *)p;
-        
-        // If pixel is not black (collision), don't move
-        if (pixel != 0) {
-            enemy->position.x = newX;
-            enemy->position.y = newY;
+    // Only check collision if mask is provided
+    if (mask != NULL) {
+        // Check boundaries first
+        if (newX >= 0 && newX < mask->w && newY >= 0 && newY < mask->h) {
+            Uint32 pixel;
+            int bpp = mask->format->BytesPerPixel;
+            Uint8 *p = (Uint8 *)mask->pixels + newY * mask->pitch + newX * bpp;
+            pixel = *(Uint32 *)p;
             
-            // Update ES position
-            if (enemy->es_active) {
-                enemy->es_position.x = enemy->position.x;
-                enemy->es_position.y = enemy->position.y - 50;
+            // If pixel is not black (collision), don't move
+            if (pixel != 0) {
+                enemy->position.x = newX;
+                enemy->position.y = newY;
             }
         }
+    } else {
+        // No collision mask provided, move freely
+        enemy->position.x = newX;
+        enemy->position.y = newY;
+    }
+    
+    // Update ES position if active
+    if (enemy->es_active) {
+        enemy->es_position.x = enemy->position.x;
+        enemy->es_position.y = enemy->position.y - 50;
     }
 }
 
@@ -215,23 +220,30 @@ void moveEnemyAI(Enemy *enemy, SDL_Rect player_pos, SDL_Surface *mask) {
         int newX = enemy->position.x + moveX;
         int newY = enemy->position.y + moveY;
         
-        if (newX >= 0 && newX < mask->w && newY >= 0 && newY < mask->h) {
-            Uint32 pixel;
-            int bpp = mask->format->BytesPerPixel;
-            Uint8 *p = (Uint8 *)mask->pixels + newY * mask->pitch + newX * bpp;
-            pixel = *(Uint32 *)p;
-            
-            // If pixel is not black (collision), don't move
-            if (pixel != 0) {
-                enemy->position.x = newX;
-                enemy->position.y = newY;
+        // Check for collision only if mask is provided
+        if (mask != NULL) {
+            if (newX >= 0 && newX < mask->w && newY >= 0 && newY < mask->h) {
+                Uint32 pixel;
+                int bpp = mask->format->BytesPerPixel;
+                Uint8 *p = (Uint8 *)mask->pixels + newY * mask->pitch + newX * bpp;
+                pixel = *(Uint32 *)p;
                 
-                // Update ES position
-                if (enemy->es_active) {
-                    enemy->es_position.x = enemy->position.x;
-                    enemy->es_position.y = enemy->position.y - 50;
+                // If pixel is not black (collision), don't move
+                if (pixel != 0) {
+                    enemy->position.x = newX;
+                    enemy->position.y = newY;
                 }
             }
+        } else {
+            // No collision mask provided, move freely
+            enemy->position.x = newX;
+            enemy->position.y = newY;
+        }
+        
+        // Update ES position
+        if (enemy->es_active) {
+            enemy->es_position.x = enemy->position.x;
+            enemy->es_position.y = enemy->position.y - 50;
         }
         
         // If close enough to player, activate ES

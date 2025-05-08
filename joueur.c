@@ -145,14 +145,27 @@ void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font) {
 
 // 3. Player animation
 void animer_joueur(Joueur *joueur) {
-    // Check if it's time to update frame
-    Uint32 currentTime = SDL_GetTicks();
+    // Increment animation timer
+    joueur->frameTimer++;
     
-    if (currentTime - joueur->frameTimer > joueur->frameDelay) {
-        joueur->frameTimer = currentTime;
-        
-        // Advance frame
+    // Update frame if timer exceeds delay
+    if (joueur->frameTimer > joueur->frameDelay) {
         joueur->currentFrame = (joueur->currentFrame + 1) % joueur->frameCount;
+        joueur->frameTimer = 0;
+    }
+    
+    // Apply gravity for jumping
+    if (joueur->state == JUMPING) {
+        // Apply gravity to jump velocity
+        joueur->jumpVelocity += 1;
+        
+        // Apply the vertical velocity
+        deplacer_joueur(joueur, 0, joueur->jumpVelocity, NULL);
+        
+        // If on ground after movement, end jump
+        if (joueur->onGround) {
+            set_player_state(joueur, IDLE);
+        }
     }
 }
 
@@ -194,27 +207,134 @@ void set_player_state(Joueur *joueur, PlayerState newState) {
 
 // 4. Player movement
 void deplacer_joueur(Joueur *joueur, int dx, int dy, SDL_Surface *collision_mask) {
-    // Store original position in case we need to revert due to collision
-    SDL_Rect oldPos = joueur->position;
+    // Calculate new position
+    int newX = joueur->position.x + dx;
+    int newY = joueur->position.y + dy;
     
-    // Update position
-    joueur->position.x += dx;
-    joueur->position.y += dy;
-    
-    // Check for collision if we have a mask
-    if (collision_mask && collision_joueur_obstacle(*joueur, collision_mask)) {
-        // Revert to original position
-        joueur->position = oldPos;
+    // Check for collisions only if a valid collision mask is provided
+    if (collision_mask != NULL) {
+        // Boundary checks
+        if (newX < 0) newX = 0;
+        if (newX + joueur->position.w > collision_mask->w) newX = collision_mask->w - joueur->position.w;
+        
+        if (newY < 0) newY = 0;
+        if (newY + joueur->position.h > collision_mask->h) newY = collision_mask->h - joueur->position.h;
+        
+        // Check for pixel-perfect collisions if needed
+        // This is a simplified collision check - you might need more complex logic
+        // Example: check all four corners of the player's bounding box
+        int collision = 0;
+        
+        // Only run this check if we're within the bounds of the collision mask
+        if (newX >= 0 && newX < collision_mask->w && 
+            newY >= 0 && newY < collision_mask->h) {
+            
+            // Get pixel at the bottom center of the player (for ground collision)
+            Uint32 pixel;
+            int bpp = collision_mask->format->BytesPerPixel;
+            
+            // Bottom center pixel
+            int checkX = newX + joueur->position.w / 2;
+            int checkY = newY + joueur->position.h - 1;
+            
+            if (checkX >= 0 && checkX < collision_mask->w && 
+                checkY >= 0 && checkY < collision_mask->h) {
+                
+                Uint8 *p = (Uint8 *)collision_mask->pixels + checkY * collision_mask->pitch + checkX * bpp;
+                pixel = *(Uint32 *)p;
+                
+                // If pixel is not black (collision), handle it
+                if (pixel != 0) {
+                    // For vertical movement, stop falling and set onGround
+                    if (dy > 0) {
+                        joueur->onGround = 1;
+                        joueur->jumpVelocity = 0;
+                        collision = 1;
+                    }
+                    // For upward movement, stop rising
+                    else if (dy < 0) {
+                        joueur->jumpVelocity = 0;
+                        collision = 1;
+                    }
+                }
+            }
+            
+            // Check side collisions as well
+            // Left side center
+            checkX = newX;
+            checkY = newY + joueur->position.h / 2;
+            
+            if (checkX >= 0 && checkX < collision_mask->w && 
+                checkY >= 0 && checkY < collision_mask->h) {
+                
+                Uint8 *p = (Uint8 *)collision_mask->pixels + checkY * collision_mask->pitch + checkX * bpp;
+                pixel = *(Uint32 *)p;
+                
+                // If pixel is not black (collision), don't move horizontally
+                if (pixel != 0 && dx < 0) {
+                    collision = 1;
+                }
+            }
+            
+            // Right side center
+            checkX = newX + joueur->position.w - 1;
+            checkY = newY + joueur->position.h / 2;
+            
+            if (checkX >= 0 && checkX < collision_mask->w && 
+                checkY >= 0 && checkY < collision_mask->h) {
+                
+                Uint8 *p = (Uint8 *)collision_mask->pixels + checkY * collision_mask->pitch + checkX * bpp;
+                pixel = *(Uint32 *)p;
+                
+                // If pixel is not black (collision), don't move horizontally
+                if (pixel != 0 && dx > 0) {
+                    collision = 1;
+                }
+            }
+        }
+        
+        // Apply movement only if there's no collision
+        if (!collision) {
+            joueur->position.x = newX;
+            joueur->position.y = newY;
+            
+            // If moving down and no collision, we're not on ground
+            if (dy > 0) {
+                joueur->onGround = 0;
+            }
+        } else if (dx != 0) {
+            // Allow vertical movement even if horizontal collision
+            joueur->position.y = newY;
+        } else if (dy != 0) {
+            // Allow horizontal movement even if vertical collision
+            joueur->position.x = newX;
+        }
+    } else {
+        // No collision mask - move freely but respect screen boundaries
+        if (newX >= 0 && newX + joueur->position.w <= SCREEN_WIDTH) {
+            joueur->position.x = newX;
+        }
+        
+        if (newY >= 0 && newY + joueur->position.h <= SCREEN_HEIGHT) {
+            joueur->position.y = newY;
+            // If moving down, assume we're not on ground
+            if (dy > 0) joueur->onGround = 0;
+        } else if (newY + joueur->position.h > SCREEN_HEIGHT) {
+            // Hit bottom of screen, assume on ground
+            joueur->position.y = SCREEN_HEIGHT - joueur->position.h;
+            joueur->onGround = 1;
+            joueur->jumpVelocity = 0;
+        }
     }
     
-    // Update camera to center on player
-    joueur->camera.x = joueur->position.x + (joueur->position.w / 2) - (joueur->camera.w / 2);
-    joueur->camera.y = joueur->position.y + (joueur->position.h / 2) - (joueur->camera.h / 2);
+    // Update camera position to follow player
+    joueur->camera.x = joueur->position.x - (SCREEN_WIDTH / 2) + (joueur->position.w / 2);
+    joueur->camera.y = joueur->position.y - (SCREEN_HEIGHT / 2) + (joueur->position.h / 2);
     
-    // Ensure camera stays within bounds
+    // Keep camera within bounds
     if (joueur->camera.x < 0) joueur->camera.x = 0;
     if (joueur->camera.y < 0) joueur->camera.y = 0;
-    // Need to know map size for right/bottom boundary checks
+    // You would also check against the maximum world dimensions here
 }
 
 void marcher_joueur(Joueur *joueur, PlayerDirection direction, SDL_Surface *collision_mask) {
@@ -248,16 +368,17 @@ void courir_joueur(Joueur *joueur, PlayerDirection direction, SDL_Surface *colli
 }
 
 void sauter_joueur(Joueur *joueur) {
-    // Only allow jumping if on ground
+    // Only allow jumping when on the ground
     if (joueur->onGround) {
-        set_player_state(joueur, JUMPING);
-        joueur->jumpVelocity = -15; // Upward velocity
-        joueur->onGround = 0; // No longer on ground
+        joueur->jumpVelocity = -15; // Initial upward velocity
+        joueur->onGround = 0;
         
-        // Play jump sound if available
+        // Play jump sound
         if (joueur->soundJump) {
             Mix_PlayChannel(-1, joueur->soundJump, 0);
         }
+        
+        set_player_state(joueur, JUMPING);
     }
 }
 
@@ -293,25 +414,23 @@ Joueur initialiser_joueur2(char *name, char *spritePath) {
 // 6. Character selection submenu
 void init_character_select(CharacterSelectMenu *menu) {
     // Load menu background
-    menu->menuBg = IMG_Load("assets/character_select_bg.png");
+    menu->menuBg = load_asset_image(TEXTURE_PATH "character_select_bg.png");
     if (!menu->menuBg) {
         fprintf(stderr, "Could not load character select background: %s\n", IMG_GetError());
     }
-    
-    // Load character sprite options
+      // Load character sprite options
     for (int i = 0; i < 4; i++) {
         char path[100];
-        sprintf(path, "assets/character_%d.png", i+1);
-        menu->characterSprites[i] = IMG_Load(path);
+        sprintf(path, TEXTURE_PATH "character_%d.png", i+1);
+        menu->characterSprites[i] = load_asset_image(path);
         
         if (!menu->characterSprites[i]) {
             fprintf(stderr, "Could not load character sprite %d: %s\n", i+1, IMG_GetError());
         }
-        
-        // Load clothing options for each character
+          // Load clothing options for each character
         for (int j = 0; j < 3; j++) {
-            sprintf(path, "assets/character_%d_clothing_%d.png", i+1, j+1);
-            menu->clothingOptions[i][j] = IMG_Load(path);
+            sprintf(path, TEXTURE_PATH "character_%d_clothing_%d.png", i+1, j+1);
+            menu->clothingOptions[i][j] = load_asset_image(path);
             
             if (!menu->clothingOptions[i][j]) {
                 fprintf(stderr, "Could not load clothing option %d for character %d: %s\n", 
@@ -381,10 +500,9 @@ Joueur select_character(CharacterSelectMenu menu, int characterIndex, int clothi
     // Validate indices
     if (characterIndex < 0 || characterIndex > 3) characterIndex = 0;
     if (clothingIndex < 0 || clothingIndex > 2) clothingIndex = 0;
-    
-    // Load appropriate character sprite with clothing
+      // Load appropriate character sprite with clothing
     char spritePath[100];
-    sprintf(spritePath, "assets/character_%d_clothing_%d_spritesheet.png", 
+    sprintf(spritePath, TEXTURE_PATH "character_%d_clothing_%d_spritesheet.png", 
             characterIndex + 1, clothingIndex + 1);
     
     // Initialize player with selected appearance

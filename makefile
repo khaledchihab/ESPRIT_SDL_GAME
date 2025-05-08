@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra -O2 $(shell sdl-config --cflags)
 LDFLAGS = $(shell sdl-config --libs) -lSDL_image -lSDL_ttf -lSDL_mixer
 
 # Source and object files
-SRCS = main.c menu.c background.c enigme1.c enigme2.c ennemie.c joueur.c minimap.c
+SRCS = main.c assets.c menu.c background.c enigme1.c enigme2.c ennemie.c joueur.c minimap.c
 OBJS = $(SRCS:.c=.o)
 
 # Executable name

@@ -5,56 +5,127 @@
 #include <SDL/SDL_mixer.h>
 #include <SDL/SDL_ttf.h>
 #include "minimap.h"
-void initmap(minimap *m)
-{
-    m->position_mini.x = 100;
-    m->position_mini.y = 0;
-    m->sprite = NULL;
-    m->bonhomme_mini = NULL;
-    
+#include "assets.h"
+
+// Improve minimap initialization with proper error handling and scaling
+void initmap(minimap *m) {
     // Load minimap background
-    m->sprite = IMG_Load("minimap.png");
-    if (m->sprite == NULL) {
-        fprintf(stderr, "Failed to load minimap.png: %s\n", IMG_GetError());
-        // Provide a fallback - create a simple gray rectangle
-        m->sprite = SDL_CreateRGBSurface(SDL_SWSURFACE, 200, 150, 32, 0, 0, 0, 0);
-        if (m->sprite != NULL) {
-            SDL_FillRect(m->sprite, NULL, SDL_MapRGB(m->sprite->format, 200, 200, 200));
-        }
+    m->backgroundMini = load_asset_image(TEXTURE_PATH "minibg.png");
+    if (!m->backgroundMini) {
+        printf("Failed to load minimap background: %s\n", IMG_GetError());
+        // Create fallback background
+        m->backgroundMini = SDL_CreateRGBSurface(SDL_SWSURFACE, 200, 150, 32, 0, 0, 0, 0);
+        SDL_FillRect(m->backgroundMini, NULL, SDL_MapRGB(m->backgroundMini->format, 50, 50, 50));
     }
     
-    // Create a small red dot for player representation on minimap
-    m->bonhomme_mini = SDL_CreateRGBSurface(SDL_SWSURFACE, 8, 8, 32, 0, 0, 0, 0);
-    
-    if (m->bonhomme_mini != NULL) {
-        // Fill the surface with red color
-        SDL_FillRect(m->bonhomme_mini, NULL, SDL_MapRGB(m->bonhomme_mini->format, 255, 0, 0));
-    } else {
-        fprintf(stderr, "Failed to create player indicator for minimap\n");
+    // Load player indicator
+    m->joueurMini = load_asset_image(TEXTURE_PATH "minijoueur.png");
+    if (!m->joueurMini) {
+        printf("Failed to load minimap player: %s\n", IMG_GetError());
+        // Create fallback player indicator
+        m->joueurMini = SDL_CreateRGBSurface(SDL_SWSURFACE, 10, 10, 32, 0, 0, 0, 0);
+        SDL_FillRect(m->joueurMini, NULL, SDL_MapRGB(m->joueurMini->format, 255, 0, 0));
     }
+    
+    // Initialize positions
+    m->miniPos.x = SCREEN_WIDTH - m->backgroundMini->w - 10;
+    m->miniPos.y = 10;
+    m->miniPos.h = m->backgroundMini->h;
+    m->miniPos.w = m->backgroundMini->w;
     
     // Initialize player position on minimap
-    m->position_bonhomme.x = 0;
-    m->position_bonhomme.y = 0;
-    m->position_bonhomme.h = 8; // Height of our dot
-    m->position_bonhomme.w = 8; // Width of our dot
+    m->posMiniJoueur.x = m->miniPos.x + 10; // Default starting position
+    m->posMiniJoueur.y = m->miniPos.y + m->backgroundMini->h / 2;
+    m->posMiniJoueur.h = m->joueurMini->h;
+    m->posMiniJoueur.w = m->joueurMini->w;
 }
-void afficherminimap (minimap m, SDL_Surface * screen)
-{
-    // Display the minimap background
-    SDL_BlitSurface(m.sprite, NULL, screen, &m.position_mini);
+
+// Display minimap with proper blending and transparency
+void afficherminimap(minimap m, SDL_Surface *screen) {
+    // Set alpha blending for semi-transparent minimap
+    SDL_SetAlpha(m.backgroundMini, SDL_SRCALPHA, 180); // 180 = semi-transparent
     
-    // Display the player representation (bonhomme) on the minimap
-    SDL_BlitSurface(m.bonhomme_mini, NULL, screen, &m.position_bonhomme);
-}
-void free_minimap (minimap *m)
-{
-    // Free minimap background
-    SDL_FreeSurface(m->sprite);
+    // Blit minimap background
+    SDL_BlitSurface(m.backgroundMini, NULL, screen, &m.miniPos);
     
-    // Free player representation on minimap
-    SDL_FreeSurface(m->bonhomme_mini);
+    // Blit player indicator (full opacity)
+    SDL_SetAlpha(m.joueurMini, SDL_SRCALPHA, 255); // 255 = fully opaque
+    SDL_BlitSurface(m.joueurMini, NULL, screen, &m.posMiniJoueur);
+    
+    // Draw a border around the minimap
+    SDL_Rect border = m.miniPos;
+    border.x--;
+    border.y--;
+    border.w += 2;
+    border.h += 2;
+    
+    // Use a function to draw only the border edges (not fill)
+    drawRect(screen, border, SDL_MapRGB(screen->format, 255, 255, 255));
 }
+
+// Helper function to draw just the outline of a rectangle
+void drawRect(SDL_Surface *screen, SDL_Rect rect, Uint32 color) {
+    // Draw top line
+    SDL_Rect line = {rect.x, rect.y, rect.w, 1};
+    SDL_FillRect(screen, &line, color);
+    
+    // Draw bottom line
+    line.y = rect.y + rect.h - 1;
+    SDL_FillRect(screen, &line, color);
+    
+    // Draw left line
+    line.y = rect.y;
+    line.w = 1;
+    line.h = rect.h;
+    SDL_FillRect(screen, &line, color);
+    
+    // Draw right line
+    line.x = rect.x + rect.w - 1;
+    SDL_FillRect(screen, &line, color);
+}
+
+// Free memory used by minimap
+void free_minimap(minimap *m) {
+    if (m->backgroundMini) {
+        SDL_FreeSurface(m->backgroundMini);
+        m->backgroundMini = NULL;
+    }
+    
+    if (m->joueurMini) {
+        SDL_FreeSurface(m->joueurMini);
+        m->joueurMini = NULL;
+    }
+}
+
+// Update minimap to correctly track player position
+void MAJMinimap(SDL_Rect posJoueur, minimap *m, SDL_Rect camera, float redimensionnement) {
+    // Calculate scaling factors between game world and minimap
+    // These scale factors convert game world coordinates to minimap coordinates
+    float scaleX = (float)m->backgroundMini->w / SCREEN_WIDTH;
+    float scaleY = (float)m->backgroundMini->h / SCREEN_HEIGHT;
+    
+    // Calculate new player position on minimap
+    // Add camera offset to make the minimap show the visible area
+    int miniX = m->miniPos.x + (posJoueur.x - camera.x) * scaleX;
+    int miniY = m->miniPos.y + (posJoueur.y - camera.y) * scaleY;
+    
+    // Apply redimensionnement factor if needed
+    miniX = (int)(miniX / redimensionnement);
+    miniY = (int)(miniY / redimensionnement);
+    
+    // Ensure player indicator stays within minimap bounds
+    if (miniX < m->miniPos.x) miniX = m->miniPos.x;
+    if (miniY < m->miniPos.y) miniY = m->miniPos.y;
+    if (miniX > m->miniPos.x + m->backgroundMini->w - m->joueurMini->w)
+        miniX = m->miniPos.x + m->backgroundMini->w - m->joueurMini->w;
+    if (miniY > m->miniPos.y + m->backgroundMini->h - m->joueurMini->h)
+        miniY = m->miniPos.y + m->backgroundMini->h - m->joueurMini->h;
+    
+    // Update player position on minimap
+    m->posMiniJoueur.x = miniX;
+    m->posMiniJoueur.y = miniY;
+}
+
 SDL_Color GetPixel(SDL_Surface *Background, int x, int y)
 {
 SDL_Color color;
@@ -145,17 +216,6 @@ else{
 pMprochaine->position_perso.x=pM->position_perso.x;
 }
 }
-}
-
-void MAJMinimap(SDL_Rect posJoueur, minimap * m, SDL_Rect camera, int redimensionnement)
-{
-    // Calculate absolute position of player
-    int posJoueurABS_x = posJoueur.x + camera.x;
-    int posJoueurABS_y = posJoueur.y + camera.y;
-    
-    // Apply redimensionnement (scaling) to get minimap coordinates
-    m->position_bonhomme.x = m->position_mini.x + (posJoueurABS_x * redimensionnement / 100);
-    m->position_bonhomme.y = m->position_mini.y + (posJoueurABS_y * redimensionnement / 100);
 }
 
 

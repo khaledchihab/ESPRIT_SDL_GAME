@@ -7,6 +7,7 @@
 #include <SDL/SDL_ttf.h>
 #include <time.h>
 #include <stdlib.h>
+#include "assets.h"
 
 // Structure to represent a puzzle piece
 typedef struct {

@@ -1,4 +1,5 @@
 #include "enigme2.h"
+#include "assets.h"
 #include <SDL/SDL_rotozoom.h>
 
 #define MAX_ZOOM 1.5
@@ -12,14 +13,14 @@ void init_enigme2(Enigme2 *e) {
     srand(time(NULL));
     
     // Load background
-    e->background = IMG_Load("resources/enigme2/background.png");
+    e->background = load_asset_image(ENIGME2_PATH "background.png");
     if (!e->background) {
         printf("Failed to load background image: %s\n", IMG_GetError());
     }
     
     // Load messages
-    e->success_message = IMG_Load("resources/enigme2/success.png");
-    e->failure_message = IMG_Load("resources/enigme2/failure.png");
+    e->success_message = load_asset_image(ENIGME2_PATH "success.png");
+    e->failure_message = load_asset_image(ENIGME2_PATH "failure.png");
     
     if (!e->success_message) printf("Failed to load success message: %s\n", IMG_GetError());
     if (!e->failure_message) printf("Failed to load failure message: %s\n", IMG_GetError());
@@ -56,14 +57,13 @@ void generate_puzzle(Enigme2 *e) {
     for (int i = 0; i < 3; i++) {
         if (e->pieces[i].image) SDL_FreeSurface(e->pieces[i].image);
     }
-    if (e->target_piece.image) SDL_FreeSurface(e->target_piece.image);
-    
+    if (e->target_piece.image) SDL_FreeSurface(e->target_piece.image);    
     // Choose a random puzzle from 3 possibilities
     int puzzle_num = rand() % 3 + 1;
     char puzzle_path[100];
-    snprintf(puzzle_path, sizeof(puzzle_path), "resources/enigme2/puzzle%d.png", puzzle_num);
+    snprintf(puzzle_path, sizeof(puzzle_path), "%spuzzle%d.png", ENIGME2_PATH, puzzle_num);
     
-    e->puzzle_image = IMG_Load(puzzle_path);
+    e->puzzle_image = load_asset_image(puzzle_path);
     if (!e->puzzle_image) {
         printf("Failed to load puzzle image: %s\n", IMG_GetError());
         return;
@@ -71,12 +71,11 @@ void generate_puzzle(Enigme2 *e) {
     
     // Load the target piece (piece with shadow/missing part)
     char target_path[100];
-    snprintf(target_path, sizeof(target_path), "resources/enigme2/puzzle%d_target.png", puzzle_num);
-    e->target_piece.image = IMG_Load(target_path);
-    
-    // Position for the incomplete puzzle (centered at the top)
-    e->target_position.x = (800 - e->puzzle_image->w) / 2;
-    e->target_position.y = 50;
+    snprintf(target_path, sizeof(target_path), "%spuzzle%d_target.png", ENIGME2_PATH, puzzle_num);
+    e->target_piece.image = load_asset_image(target_path);
+      // Position for the incomplete puzzle (centered at the top)
+    e->target_position.x = (SCREEN_WIDTH - e->puzzle_image->w) / 2;
+    e->target_position.y = 70; // Adjusted for higher resolution
     e->target_position.w = e->puzzle_image->w;
     e->target_position.h = e->puzzle_image->h;
     
@@ -85,24 +84,22 @@ void generate_puzzle(Enigme2 *e) {
     
     for (int i = 0; i < 3; i++) {
         char piece_path[100];
-        if (i == correct_piece) {
-            // Load correct piece
-            snprintf(piece_path, sizeof(piece_path), "resources/enigme2/puzzle%d_piece_correct.png", puzzle_num);
+        if (i == correct_piece) {            // Load correct piece
+            snprintf(piece_path, sizeof(piece_path), "%spuzzle%d_piece_correct.png", ENIGME2_PATH, puzzle_num);
             e->pieces[i].is_correct = 1;
         } else {
             // Load incorrect pieces
-            snprintf(piece_path, sizeof(piece_path), "resources/enigme2/puzzle%d_piece_wrong%d.png", puzzle_num, i + (i >= correct_piece ? 1 : 0));
+            snprintf(piece_path, sizeof(piece_path), "%spuzzle%d_piece_wrong%d.png", ENIGME2_PATH, puzzle_num, i + (i >= correct_piece ? 1 : 0));
             e->pieces[i].is_correct = 0;
         }
         
-        e->pieces[i].image = IMG_Load(piece_path);
+        e->pieces[i].image = load_asset_image(piece_path);
         if (!e->pieces[i].image) {
             printf("Failed to load piece image %d: %s\n", i, IMG_GetError());
         }
-        
-        // Position the pieces at the bottom of the screen, equally spaced
-        e->pieces[i].position.x = 100 + i * 250;
-        e->pieces[i].position.y = 500;
+          // Position the pieces at the bottom of the screen, equally spaced
+        e->pieces[i].position.x = (SCREEN_WIDTH / 4) * (i + 1) - (e->pieces[i].image ? e->pieces[i].image->w / 2 : 0);
+        e->pieces[i].position.y = SCREEN_HEIGHT - 150;
         e->pieces[i].position.w = e->pieces[i].image->w;
         e->pieces[i].position.h = e->pieces[i].image->h;
         

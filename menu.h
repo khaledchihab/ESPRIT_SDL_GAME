@@ -6,9 +6,9 @@
 #include <SDL/SDL_mixer.h>
 #include <SDL/SDL_ttf.h>
 
-// Screen dimensions
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+// Screen dimensions - updated to match main.c
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720 
 #define SCREEN_BPP 32
 
 // Menu states
@@ -38,9 +38,9 @@ typedef struct {
 
 // Function prototypes
 // Initialization
-int init_SDL();
-int load_assets();
-void cleanup();
+int init_menu(SDL_Surface *existing_screen); // Updated to use existing screen
+int load_menu_assets();
+void cleanup_menu();
 
 // Button management
 Button create_button(int x, int y, const char *label);
@@ -67,11 +67,9 @@ MenuState handle_history_menu_events(SDL_Event *event);
 void play_hover_sound();
 
 // Global variables declarations (to be defined in source file)
-extern SDL_Surface *screen;
-extern SDL_Surface *background;
+extern SDL_Surface *background_menu;
 extern SDL_Surface *button_image;
-extern TTF_Font *font;
-extern Mix_Music *music;
+extern TTF_Font *menu_font;
 extern Mix_Chunk *hover_sound;
 extern Button main_buttons[5];
 extern MenuState current_menu;
