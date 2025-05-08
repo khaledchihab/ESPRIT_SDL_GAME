@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     // Core SDL variables
     SDL_Surface *screen = NULL;
     SDL_Surface *background = NULL;
-    SDL_Rect bgPos = {0, 0};
+    SDL_Rect bgPos = {0, 0, 0, 0};
 
     TTF_Font *font = NULL;
     Mix_Music *music = NULL;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     // Enigme initialization
     enigme en;
-    SDL_Color textColor = {255, 255, 255};
+    SDL_Color textColor = {255, 255, 255, 255};
     init_enigme(&en, textColor);
 
     // Create collision mask (usually loaded from file but creating a blank one for now)
@@ -147,9 +147,10 @@ int main(int argc, char *argv[]) {
                         break;
                     case HISTORY_MENU:
                         menuState = handle_history_menu_events(&event);
-                        break;
-                    case QUIT:
+                        break;                    case QUIT:
                         continuer = 0;
+                        break;
+                    default:
                         break;
                 }
                 
@@ -160,8 +161,7 @@ int main(int argc, char *argv[]) {
             }
             else if (gameState == STATE_MAIN_GAME) {
                 // Game specific input handling
-                if (event.type == SDL_KEYDOWN) {
-                    switch (event.key.keysym.sym) {
+                if (event.type == SDL_KEYDOWN) {                    switch (event.key.keysym.sym) {
                         case SDLK_ESCAPE:
                             gameState = STATE_MENU; // Return to menu
                             menuState = MAIN_MENU;
@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
                         case SDLK_e:
                             // Manual enigme trigger for testing
                             gameState = STATE_ENIGME2;
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -285,7 +287,7 @@ int main(int argc, char *argv[]) {
                 // Display game over text
                 SDL_Surface *game_over;
                 SDL_Rect game_over_pos;
-                SDL_Color white = {255, 255, 255};
+                SDL_Color white = {255, 255, 255, 255};
                 
                 // Clear screen
                 SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
@@ -299,19 +301,19 @@ int main(int argc, char *argv[]) {
                 // Display score
                 char score_text[50];
                 sprintf(score_text, "Final Score: %d", joueur.score);
-                SDL_Surface *score_surf = TTF_RenderText_Solid(font, score_text, white);
-                SDL_Rect score_pos = {
+                SDL_Surface *score_surf = TTF_RenderText_Solid(font, score_text, white);                SDL_Rect score_pos = {
                     (SCREEN_WIDTH - score_surf->w) / 2,
-                    game_over_pos.y + game_over->h + 20
+                    game_over_pos.y + game_over->h + 20,
+                    0, 0
                 };
                 SDL_BlitSurface(score_surf, NULL, screen, &score_pos);
                 SDL_FreeSurface(score_surf);
                 
                 // Display instruction to return to menu
-                SDL_Surface *inst = TTF_RenderText_Solid(font, "Press ENTER to return to menu", white);
-                SDL_Rect inst_pos = {
+                SDL_Surface *inst = TTF_RenderText_Solid(font, "Press ENTER to return to menu", white);                SDL_Rect inst_pos = {
                     (SCREEN_WIDTH - inst->w) / 2,
-                    score_pos.y + 40
+                    score_pos.y + 40,
+                    0, 0
                 };
                 SDL_BlitSurface(inst, NULL, screen, &inst_pos);
                 SDL_FreeSurface(inst);
@@ -322,8 +324,13 @@ int main(int argc, char *argv[]) {
                     menuState = MAIN_MENU;
                       // Reset player
                     liberer_joueur(&joueur);
-                    initialiser_joueur(&joueur, "Player1", PLAYER_SPRITE_PATH);
-                }
+                    initialiser_joueur(&joueur, "Player1", PLAYER_SPRITE_PATH);                }
+                break;
+                
+            default:
+                // Handle any undefined states
+                gameState = STATE_MENU;
+                menuState = MAIN_MENU;
                 break;
         }
 
@@ -391,7 +398,7 @@ SDL_Surface* load_image(const char* filename) {
 void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font) {
     SDL_Surface *text_surface;
     SDL_Rect position;
-    SDL_Color white = {255, 255, 255};
+    SDL_Color white = {255, 255, 255, 255};
     char stats_text[100];
     
     // Create stats string

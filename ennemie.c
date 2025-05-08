@@ -12,9 +12,8 @@ void initEnemy(Enemy *enemy, EnemyLevel level, int x, int y) {
     enemy->position.y = y;
     enemy->position.w = 64; // Default width
     enemy->position.h = 64; // Default height
-    
-    enemy->level = level;
-    enemy->direction = RIGHT;
+      enemy->level = level;
+    enemy->direction = ENEMY_RIGHT;
     enemy->state = ALIVE;
     
     enemy->frame_current = 0;
@@ -134,18 +133,18 @@ void moveEnemy(Enemy *enemy, SDL_Surface *mask) {
     
     if (enemy->position.x < target.x) {
         dx = enemy->move_speed;
-        enemy->direction = RIGHT;
+        enemy->direction = ENEMY_RIGHT;
     } else if (enemy->position.x > target.x) {
         dx = -enemy->move_speed;
-        enemy->direction = LEFT;
+        enemy->direction = ENEMY_LEFT;
     }
     
     if (enemy->position.y < target.y) {
         dy = enemy->move_speed;
-        enemy->direction = DOWN;
+        enemy->direction = ENEMY_DOWN;
     } else if (enemy->position.y > target.y) {
         dy = -enemy->move_speed;
-        enemy->direction = UP;
+        enemy->direction = ENEMY_UP;
     }
     
     // Check if we reached the target point
@@ -210,9 +209,9 @@ void moveEnemyAI(Enemy *enemy, SDL_Rect player_pos, SDL_Surface *mask) {
         
         // Set direction based on movement
         if (abs(moveX) > abs(moveY)) {
-            enemy->direction = (moveX > 0) ? RIGHT : LEFT;
+            enemy->direction = (moveX > 0) ? ENEMY_RIGHT : ENEMY_LEFT;
         } else {
-            enemy->direction = (moveY > 0) ? DOWN : UP;
+            enemy->direction = (moveY > 0) ? ENEMY_DOWN : ENEMY_UP;
         }
         
         // Apply movement if collision check passes

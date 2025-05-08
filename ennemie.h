@@ -6,11 +6,11 @@
 
 // Direction enumeration for enemy movement
 typedef enum {
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    IDLE
+    ENEMY_LEFT,
+    ENEMY_RIGHT,
+    ENEMY_UP,
+    ENEMY_DOWN,
+    ENEMY_IDLE
 } Direction;
 
 // Enemy state enumeration

@@ -111,9 +111,8 @@ int button_hover(Button *button, int x, int y) {
 }
 
 void render_button(SDL_Surface *screen, Button *button) {
-    SDL_Surface *text_surface;
-    SDL_Color text_color = {255, 255, 255}; // White
-    SDL_Color hover_color = {255, 255, 0};  // Yellow
+    SDL_Surface *text_surface;    SDL_Color text_color = {255, 255, 255, 255}; // White with alpha
+    SDL_Color hover_color = {255, 255, 0, 255};  // Yellow with alpha
     SDL_Rect offset;
     
     // Apply button image
@@ -149,10 +148,9 @@ void render_main_menu(SDL_Surface *screen) {
     
     // Apply background
     SDL_BlitSurface(background_menu, NULL, screen, NULL);
-    
-    // Render title with our menu font
+      // Render title with our menu font
     SDL_Surface *title;
-    SDL_Color title_color = {255, 255, 255};
+    SDL_Color title_color = {255, 255, 255, 255}; // With alpha
     SDL_Rect title_pos;
     
     if (menu_font) {
@@ -236,7 +234,7 @@ void render_play_menu(SDL_Surface *screen) {
     
     // Render title
     SDL_Surface *title;
-    SDL_Color title_color = {255, 255, 255};
+    SDL_Color title_color = {255, 255, 255, 255};
     SDL_Rect title_pos;
     
     if (menu_font) {
@@ -278,7 +276,7 @@ void render_options_menu(SDL_Surface *screen) {
     
     // Render title
     SDL_Surface *title;
-    SDL_Color title_color = {255, 255, 255};
+    SDL_Color title_color = {255, 255, 255, 255};
     SDL_Rect title_pos;
     
     if (menu_font) {
@@ -327,7 +325,7 @@ void render_highscore_menu(SDL_Surface *screen) {
     // Render title
     if (menu_font) {
         SDL_Surface *title;
-        SDL_Color title_color = {255, 255, 255};
+        SDL_Color title_color = {255, 255, 255, 255};
         SDL_Rect title_pos;
         
         TTF_SetFontStyle(menu_font, TTF_STYLE_BOLD);
@@ -385,7 +383,7 @@ void render_history_menu(SDL_Surface *screen) {
     if (menu_font) {
         // Render title
         SDL_Surface *title;
-        SDL_Color title_color = {255, 255, 255};
+        SDL_Color title_color = {255, 255, 255, 255};
         SDL_Rect title_pos;
         
         TTF_SetFontStyle(menu_font, TTF_STYLE_BOLD);

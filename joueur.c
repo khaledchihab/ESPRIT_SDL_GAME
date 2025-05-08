@@ -120,7 +120,7 @@ void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font) {
     }
     
     // Create text surfaces
-    SDL_Color textColor = {255, 255, 255}; // White
+    SDL_Color textColor = {255, 255, 255, 255}; // White
     char scoreText[50];
     char livesText[20];
     

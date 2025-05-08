@@ -224,7 +224,7 @@ int quiz1(enigme *en, SDL_Surface* screen) {
     // Add instructions
     SDL_Surface *instructions;
     SDL_Rect inst_pos;
-    SDL_Color white = {255, 255, 255};
+    SDL_Color white = {255, 255, 255, 255};
     
     if (en->police) {
         instructions = TTF_RenderText_Blended(en->police, "Press 1, 2, or 3 to select your answer", white);

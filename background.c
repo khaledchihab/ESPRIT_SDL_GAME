@@ -148,7 +148,7 @@ void updateGameTime(GameTime* gameTime, SDL_Surface* screen) {
     sprintf(timeString, "%02d:%02d:%02d", hours, mins, secs);
     
     // Create text surface
-    SDL_Color white = {255, 255, 255};
+    SDL_Color white = {255, 255, 255, 255};
     if (gameTime->timeText) {
         SDL_FreeSurface(gameTime->timeText);
     }
