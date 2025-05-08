@@ -30,7 +30,6 @@ typedef enum {
 int init_SDL();
 void cleanup_SDL();
 SDL_Surface* load_image(const char* filename);
-void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font);
 
 int main(int argc, char *argv[]) {
     // Suppress unused parameter warnings
@@ -398,24 +397,5 @@ SDL_Surface* load_image(const char* filename) {
 
 // Display player stats on screen
 void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font) {
-    SDL_Surface *text_surface;
-    SDL_Rect position;
-    SDL_Color white = {255, 255, 255, 255};
-    char stats_text[100];
-    
-    // Create stats string
-    sprintf(stats_text, "Vie: %d   Score: %d", joueur.lives, joueur.score);
-    
-    // Render text
-    text_surface = TTF_RenderText_Solid(font, stats_text, white);
-    
-    // Position at top left
-    position.x = 10;
-    position.y = 10;
-    
-    // Draw text
-    SDL_BlitSurface(text_surface, NULL, screen, &position);
-    
-    // Free surface
-    SDL_FreeSurface(text_surface);
+    // This function is now defined in joueur.c
 }

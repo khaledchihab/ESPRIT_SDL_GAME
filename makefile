@@ -3,7 +3,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 $(shell sdl-config --cflags)
-LDFLAGS = $(shell sdl-config --libs) -lSDL_image -lSDL_ttf -lSDL_mixer
+LDFLAGS = $(shell sdl-config --libs) -lSDL_image -lSDL_ttf -lSDL_mixer -lm
 
 # Source and object files
 SRCS = main.c assets.c menu.c background.c enigme1.c enigme2.c ennemie.c joueur.c minimap.c
