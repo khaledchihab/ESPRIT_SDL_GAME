@@ -150,12 +150,12 @@ void display_enigme2(Enigme2 *e, SDL_Surface *screen) {
     int bar_height = 20;
     int x = (screen->w - bar_width) / 2;
     int y = 20;
-    
-    // Draw bar background
+      // Draw bar background
     SDL_Rect bar_bg = {x, y, bar_width, bar_height};
     SDL_FillRect(screen, &bar_bg, SDL_MapRGB(screen->format, 100, 100, 100));
     
-    // Draw remaining time bar    float percentage = (float)remaining / (e->time_limit * 1000);
+    // Draw remaining time bar
+    float percentage = (float)remaining / (e->time_limit * 1000);
     SDL_Rect bar = {x, y, (int)(bar_width * percentage), bar_height};
     
     // Change bar color based on remaining time
