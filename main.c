@@ -395,7 +395,4 @@ SDL_Surface* load_image(const char* filename) {
     return load_asset_image(filename);
 }
 
-// Display player stats on screen
-void display_stats(Joueur joueur, SDL_Surface *screen, TTF_Font *font) {
-    // This function is now defined in joueur.c
-}
+// Note: display_stats function is defined in joueur.c
