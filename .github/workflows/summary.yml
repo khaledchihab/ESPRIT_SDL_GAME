@@ -1,4 +1,4 @@
-name: Summarize new issues
+name: 🏆 Auto-Issue Summarizer & Greeter
 
 on:
   issues:
@@ -9,26 +9,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      models: read
       contents: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run AI inference
-        id: inference
-        uses: actions/ai-inference@v1
+      - name: 🚀 Welcome & Summarize Issue
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          prompt: |
-            Summarize the following GitHub issue in one paragraph:
-            Title: ${{ github.event.issue.title }}
-            Body: ${{ github.event.issue.body }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            👋 **Welcome, @${{ github.event.issue.user.login }}!**
 
-      - name: Comment with AI summary
-        run: |
-          gh issue comment $ISSUE_NUMBER --body '${{ steps.inference.outputs.response }}'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          RESPONSE: ${{ steps.inference.outputs.response }}
+            Thanks for opening this issue. Here’s a quick summary:
+
+            ---
+            ### 📝 **Issue Title**
+            > ${{ github.event.issue.title }}
+
+            ### 📋 **Issue Body**
+            > ${{ github.event.issue.body }}
+
+            ---
+            _A maintainer will review your report soon. If you have more details, feel free to reply!_
+
+            > _Automated by GitHub Actions on `${{ github.repository }}`_
