@@ -58,26 +58,7 @@ int main(int argc, char *argv[]) {
         cleanup_SDL();
         return 1;
     }
-    SDL_WM_SetCaption("Mon Jeu", NULL);    // Load main game font
-    font = load_asset_font(MENU_FONT_PATH, 24);
-    if (font == NULL) {
-        printf("Erreur lors du chargement de la police: %s\n", TTF_GetError());
-        cleanup_SDL();
-        return 1;
-    }    // Load and play background music
-    music = load_asset_music(BACKGROUND_MUSIC);
-    if (music == NULL) {
-        printf("Erreur lors du chargement de la musique: %s\n", Mix_GetError());
-        // Continue without music
-    } else {
-        Mix_PlayMusic(music, -1); // Play in loop
-    }    // Load background image
-    background = load_asset_image(BACKGROUND_PATH);
-    if (!background) {
-        printf("Erreur de chargement du background: %s\n", IMG_GetError());
-        cleanup_SDL();
-        return 1;
-    }
+    SDL_WM_SetCaption("Mon Jeu", NULL);
 
     // Initialize menu system with our screen
     if (!init_menu(screen)) {
@@ -86,8 +67,26 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Set the menu font for proper rendering
-    menu_font = font;
+    // Get font from menu system for game use
+    extern TTF_Font *menu_font;
+    font = menu_font;
+
+    // Load and play background music
+    music = load_asset_music(BACKGROUND_MUSIC);
+    if (music == NULL) {
+        printf("Erreur lors du chargement de la musique: %s\n", Mix_GetError());
+        // Continue without music
+    } else {
+        Mix_PlayMusic(music, -1); // Play in loop
+    }
+
+    // Load background image
+    background = load_asset_image(BACKGROUND_PATH);
+    if (!background) {
+        printf("Erreur de chargement du background: %s\n", IMG_GetError());
+        cleanup_SDL();
+        return 1;
+    }
 
     // Init game elements    // Player initialization
     Joueur joueur;
@@ -157,8 +156,9 @@ int main(int argc, char *argv[]) {
                 }
                 
                 // Check if we should switch from menu to game
-                if (menuState == PLAY_MENU) {
+                if (menuState == START_GAME) {
                     gameState = STATE_MAIN_GAME;
+                    menuState = MAIN_MENU; // Reset menu state
                 }
             }
             else if (gameState == STATE_MAIN_GAME) {
@@ -347,9 +347,9 @@ int main(int argc, char *argv[]) {
     
     cleanup_menu();
     
-    TTF_CloseFont(font);
+    // Note: font is managed by menu system, don't free it here
     if (music) Mix_FreeMusic(music);
-    SDL_FreeSurface(background);
+    if (background) SDL_FreeSurface(background);
     
     // Free game elements
     liberer_joueur(&joueur);

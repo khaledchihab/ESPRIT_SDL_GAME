@@ -50,6 +50,13 @@ int load_menu_assets() {
         SDL_FillRect(button_image, NULL, SDL_MapRGB(button_image->format, 100, 100, 100));
     }
     
+    // Load menu font
+    menu_font = load_asset_font(MENU_FONT_PATH, 24);
+    if (menu_font == NULL) {
+        printf("Failed to load menu font: %s\n", TTF_GetError());
+        // Continue without font - text rendering will be skipped
+    }
+    
     // Load hover sound
     hover_sound = load_asset_sound(SOUND_PATH "hover.wav");
     if (hover_sound == NULL) {
@@ -64,6 +71,7 @@ void cleanup_menu() {
     // Free menu resources only, not SDL subsystems
     if (background_menu) SDL_FreeSurface(background_menu);
     if (button_image) SDL_FreeSurface(button_image);
+    if (menu_font) TTF_CloseFont(menu_font);
     if (hover_sound) Mix_FreeChunk(hover_sound);
 }
 
@@ -433,8 +441,16 @@ void render_history_menu(SDL_Surface *screen) {
 
 // Event handlers for submenus
 MenuState handle_play_menu_events(SDL_Event *event) {
-    if (event->type == SDL_KEYDOWN || event->type == SDL_MOUSEBUTTONDOWN) {
-        return MAIN_MENU;
+    if (event->type == SDL_KEYDOWN) {
+        switch (event->key.keysym.sym) {
+            case SDLK_RETURN:
+            case SDLK_SPACE:
+                return START_GAME; // Start the game
+            case SDLK_ESCAPE:
+                return MAIN_MENU; // Return to main menu
+        }
+    } else if (event->type == SDL_MOUSEBUTTONDOWN) {
+        return START_GAME; // Start game on mouse click
     }
     return PLAY_MENU;
 }

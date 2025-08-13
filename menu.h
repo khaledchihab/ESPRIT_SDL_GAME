@@ -18,6 +18,7 @@ typedef enum {
     OPTIONS_MENU,
     HIGHSCORE_MENU,
     HISTORY_MENU,
+    START_GAME,
     QUIT
 } MenuState;
 

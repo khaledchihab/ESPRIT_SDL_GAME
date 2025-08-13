@@ -4,6 +4,7 @@
 #include <SDL/SDL_image.h>
 #include <math.h>
 #include "ennemie.h"
+#include "assets.h" // Include for proper asset loading
 
 // Initialize enemy based on level
 void initEnemy(Enemy *enemy, EnemyLevel level, int x, int y) {
@@ -26,23 +27,36 @@ void initEnemy(Enemy *enemy, EnemyLevel level, int x, int y) {
     
     // Set level-specific properties
     if (level == LEVEL1) {
-        enemy->sprite = IMG_Load("enemy1.png");
+        enemy->sprite = load_asset_image(ENEMY_SPRITE_PATH);
         enemy->move_speed = 2;
         enemy->health = 50;
         enemy->max_health = 50;
         enemy->damage = 5;
         enemy->detect_range = 150;
         enemy->attack_range = 50;
-        enemy->es_sprite = IMG_Load("enemy1_es.png");
+        enemy->es_sprite = load_asset_image(ENEMY_SPRITE_PATH); // Use same sprite for ES for now
     } else { // LEVEL2
-        enemy->sprite = IMG_Load("enemy2.png");
+        enemy->sprite = load_asset_image(ENEMY_SPRITE_PATH);
         enemy->move_speed = 3;
         enemy->health = 100;
         enemy->max_health = 100;
         enemy->damage = 10;
         enemy->detect_range = 200;
         enemy->attack_range = 60;
-        enemy->es_sprite = IMG_Load("enemy2_es.png");
+        enemy->es_sprite = load_asset_image(ENEMY_SPRITE_PATH); // Use same sprite for ES for now
+    }
+    
+    // Check if sprites loaded successfully, create fallbacks if needed
+    if (!enemy->sprite) {
+        printf("Failed to load enemy sprite, creating fallback\n");
+        enemy->sprite = SDL_CreateRGBSurface(SDL_SWSURFACE, 256, 192, 32, 0, 0, 0, 0); // 4x3 frames
+        SDL_FillRect(enemy->sprite, NULL, SDL_MapRGB(enemy->sprite->format, 255, 0, 0)); // Red fallback
+    }
+    
+    if (!enemy->es_sprite) {
+        printf("Failed to load enemy ES sprite, creating fallback\n");
+        enemy->es_sprite = SDL_CreateRGBSurface(SDL_SWSURFACE, 32, 32, 32, 0, 0, 0, 0);
+        SDL_FillRect(enemy->es_sprite, NULL, SDL_MapRGB(enemy->es_sprite->format, 255, 255, 0)); // Yellow fallback
     }
     
     // Set up animation rectangles - these would be adjusted based on your sprite sheet

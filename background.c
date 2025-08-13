@@ -35,23 +35,23 @@ void initBackground(Background* bg, char* filename, int type) {
 }
 
 // Display background with camera support
-void displayBackground(Background bg, SDL_Surface* screen) {
-    if (bg.type == 0) {
+void displayBackground(Background* bg, SDL_Surface* screen) {
+    if (bg->type == 0) {
         // Fixed background - doesn't scroll
-        SDL_BlitSurface(bg.img, NULL, screen, &bg.pos_screen);
+        SDL_BlitSurface(bg->img, NULL, screen, &bg->pos_screen);
     } else {
         // Mobile background - takes camera position into account
-        if (bg.camera_pos.x + bg.camera_pos.w > bg.img->w) {
-            bg.camera_pos.x = bg.img->w - bg.camera_pos.w;
+        if (bg->camera_pos.x + bg->camera_pos.w > bg->img->w) {
+            bg->camera_pos.x = bg->img->w - bg->camera_pos.w;
         }
-        if (bg.camera_pos.y + bg.camera_pos.h > bg.img->h) {
-            bg.camera_pos.y = bg.img->h - bg.camera_pos.h;
+        if (bg->camera_pos.y + bg->camera_pos.h > bg->img->h) {
+            bg->camera_pos.y = bg->img->h - bg->camera_pos.h;
         }
-        if (bg.camera_pos.x < 0) bg.camera_pos.x = 0;
-        if (bg.camera_pos.y < 0) bg.camera_pos.y = 0;
+        if (bg->camera_pos.x < 0) bg->camera_pos.x = 0;
+        if (bg->camera_pos.y < 0) bg->camera_pos.y = 0;
         
         // Blit visible portion based on camera position
-        SDL_BlitSurface(bg.img, &bg.camera_pos, screen, &bg.pos_screen);
+        SDL_BlitSurface(bg->img, &bg->camera_pos, screen, &bg->pos_screen);
     }
 }
 

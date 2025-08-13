@@ -49,7 +49,7 @@ void initGameTime(GameTime* gameTime, char* fontPath, int fontSize);
  * @param bg Background to display
  * @param screen Screen surface to blit on
  */
-void displayBackground(Background bg, SDL_Surface* screen);
+void displayBackground(Background* bg, SDL_Surface* screen);
 
 /**
  * Scroll the background

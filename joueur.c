@@ -17,10 +17,13 @@ void initialiser_joueur(Joueur *joueur, char *name, char *spritePath) {
     joueur->lives = 3;
     
     // Load player sprite
-    joueur->sprite = IMG_Load(spritePath);
+    joueur->sprite = load_asset_image(spritePath);
     if (!joueur->sprite) {
         fprintf(stderr, "Could not load player sprite: %s\n", IMG_GetError());
-        exit(1);
+        // Create a fallback sprite instead of exiting
+        joueur->sprite = SDL_CreateRGBSurface(SDL_SWSURFACE, 640, 320, 32, 0, 0, 0, 0); // 10x5 frames
+        SDL_FillRect(joueur->sprite, NULL, SDL_MapRGB(joueur->sprite->format, 0, 255, 0)); // Green fallback
+        printf("Using fallback player sprite\n");
     }
     
     // Set initial position
@@ -62,9 +65,9 @@ void initialiser_joueur(Joueur *joueur, char *name, char *spritePath) {
     joueur->direction = RIGHT;
     
     // Load sound effects if they exist
-    joueur->soundJump = Mix_LoadWAV("sounds/jump.wav");
-    joueur->soundAttack = Mix_LoadWAV("sounds/attack.wav");
-    joueur->soundHurt = Mix_LoadWAV("sounds/hurt.wav");
+    joueur->soundJump = load_asset_sound(SOUND_PATH "jump.wav");
+    joueur->soundAttack = load_asset_sound(SOUND_PATH "attack.wav");
+    joueur->soundHurt = load_asset_sound(SOUND_PATH "hurt.wav");
     
     // Check if sounds loaded properly
     if (!joueur->soundJump || !joueur->soundAttack || !joueur->soundHurt) {
